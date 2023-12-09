@@ -5,7 +5,6 @@ const hashedPassword = require('../../utils/hashPassword');
 const verifyToken = require('../../middleware');
 const userClaim = require('../../utils/userClaim');
 const router = express.Router();
-const generatedUUID = uuidv4();
 
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -28,7 +27,7 @@ router.get('/', verifyToken, (req, res) => {
   const startIndex = (page - 1) * size;
   const endIndex = page * size;
   const select = "SELECT id, firstName , lastName, userName, role";
-  const from = "FROM `storeuser`";
+  const from = "FROM `users`";
   const where = "WHERE firstName LIKE ? OR lastName LIKE ? OR userName LIKE ?";
   const params = [`%${keyword}%`, `%${keyword}%`, `%${keyword}%`];
   const query = `${select} ${from} ${keyword ? where : ""}`;
@@ -57,7 +56,7 @@ router.get('/', verifyToken, (req, res) => {
 router.get('/:id', verifyToken, (req, res) => {
   const id = req.params.id;
   const select = "SELECT id, firstName , lastName, userName, role";
-  const from = "FROM `storeuser`";
+  const from = "FROM `users`";
   const where = "WHERE id = ?"
   const query = `${select} ${from} ${where}`;
   const params = [id];
@@ -85,15 +84,24 @@ router.get('/:id', verifyToken, (req, res) => {
 router.post('/', verifyToken, async (req, res) => {
   const body = req.body;
   const select = "SELECT id";
-  const from = "FROM `storeuser`";
+  const from = "FROM `users`";
   const where = "WHERE username = ?";
   const query = `${select} ${from} ${where}`;
   const params = [body.userName];
   const token = req.headers['authorization'];
   const user = getUser(token);
+  const generatedUUID = uuidv4();
 
   if (user.role !== "admin") {
     return res.status(401).send('Unauthrorized');
+  }
+
+  if (!body.firstName ||
+    !body.lastName ||
+    !body.userName ||
+    !body.password ||
+    !body.role) {
+    return res.status(400).send();
   }
 
   const passwordHash = await hashedPassword(body.password);
@@ -104,7 +112,7 @@ router.post('/', verifyToken, async (req, res) => {
     password: passwordHash,
   };
 
-  const insert = "INSERT INTO `storeuser`(`id`, `firstName`, `lastName`, `userName`, `password`, `role`, `createBy`, `createDate`) VALUES (?, ?, ?, ?, ?, ?, ? ,?)";
+  const insert = "INSERT INTO `users`(`id`, `firstName`, `lastName`, `userName`, `password`, `role`, `createBy`, `createDate`) VALUES (?, ?, ?, ?, ?, ?, ? ,?)";
   const insertParams = [newBody.id, newBody.firstName, newBody.lastName, newBody.userName, newBody.password, newBody.role, user.id, new Date()];
 
   const insertUser = () => db.query(
@@ -125,15 +133,15 @@ router.post('/', verifyToken, async (req, res) => {
         insertUser();
       }
     }
-  );
+  )
 });
 
-//Update User
+// Update User
 router.put('/:id', verifyToken, async (req, res) => {
   const id = req.params.id;
   const body = req.body;
   const select = "SELECT id";
-  const from = "FROM `storeuser`";
+  const from = "FROM `users`";
   const where = "WHERE username = ?";
   const whereId = "WHERE id = ?";
   const query = `${select} ${from} ${where}`;
@@ -146,11 +154,19 @@ router.put('/:id', verifyToken, async (req, res) => {
     return res.status(401).send('Unauthrorized');
   }
 
+  if (!body.firstName ||
+    !body.lastName ||
+    !body.userName ||
+    !body.password ||
+    !body.role) {
+    return res.status(400).send();
+  }
+
   const newBody = {
     ...body,
-  };
+  }
 
-  const update = "UPDATE `storeuser` SET  firstName = ?, lastName = ?, userName = ?, role = ?, updateBy = ?, updateDate = ?";
+  const update = "UPDATE `users` SET  firstName = ?, lastName = ?, userName = ?, role = ?, updateBy = ?, updateDate = ?";
   const whereUpdate = "WHERE id = ?"
   const updateParams = [newBody.firstName, newBody.lastName, newBody.userName, newBody.role, user.id, new Date(), id];
   const updateQuery = `${update} ${whereUpdate}`;
@@ -167,7 +183,7 @@ router.put('/:id', verifyToken, async (req, res) => {
     queryUserById,
     [id],
     (_, result) => {
-      if (result.length === 0) {
+      if (result?.length === 0) {
         return res.status(404).send("Not found user");
       } else {
         updateUser();
@@ -192,11 +208,11 @@ router.put('/:id', verifyToken, async (req, res) => {
 router.delete('/:id', verifyToken, (req, res) => {
   const id = req.params.id;
   const select = "SELECT id";
-  const from = "FROM `storeuser`";
+  const from = "FROM `users`";
   const where = "WHERE id = ?";
   const query = `${select} ${from} ${where}`;
   const params = [id];
-  const deleteQuery = "DELETE FROM `storeuser` WHERE id = ?";
+  const deleteQuery = "DELETE FROM `users` WHERE id = ?";
   const token = req.headers['authorization'];
   const user = getUser(token);
 

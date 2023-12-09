@@ -8,7 +8,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.use('/api/backoffice/user', require('./routes/api/user'));
+app.use('/api/backoffice/user', require('./routes/api/backOfficeUser'));
+app.use('/api/backoffice/store', require('./routes/api/backOfficeStore'));
+app.use('/api/file', require('./routes/api/file'));
+app.use('/api/store', require('./routes/api/store'));
 app.use('/api/authen', require('./routes/api/authen'));
 
 const PORT = process.env.PORT || 5000;

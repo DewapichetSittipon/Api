@@ -4,7 +4,10 @@ const express = require('express');
 const mysql = require('mysql2');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { v4: uuidv4 } = require('uuid');
+const hashedPassword = require('../../utils/hashPassword');
 const router = express.Router();
+const generatedUUID = uuidv4();
 
 const JWT_SECRET = process.env.SECRET_KEY;
 
@@ -18,7 +21,7 @@ const db = mysql.createConnection({
 router.post('/login', async (req, res) => {
   const body = req.body;
 
-  const selectUser = "SELECT * FROM `storeuser`";
+  const selectUser = "SELECT * FROM `users`";
   const whereUser = "WHERE username = ?";
   const params = [body.userName];
   const queryUser = `${selectUser} ${whereUser}`;
@@ -44,6 +47,48 @@ router.post('/login', async (req, res) => {
         }
       } else {
         return res.status(404).send();
+      }
+    }
+  );
+});
+
+//Register
+router.post('/register', async (req, res) => {
+  const body = req.body;
+  const select = "SELECT id";
+  const from = "FROM `users`";
+  const where = "WHERE username = ?";
+  const query = `${select} ${from} ${where}`;
+  const params = [body.userName];
+
+  const passwordHash = await hashedPassword(body.password);
+
+  const newBody = {
+    ...body,
+    id: generatedUUID,
+    password: passwordHash,
+    role: 'user',
+  };
+
+  const insert = "INSERT INTO `users`(`id`, `firstName`, `lastName`, `userName`, `password`, `role`, `createBy`, `createDate`) VALUES (?, ?, ?, ?, ?, ?, ? ,?)";
+  const insertParams = [newBody.id, newBody.firstName, newBody.lastName, newBody.userName, newBody.password, newBody.role, newBody.id, new Date()];
+
+  const insertUser = () => db.query(
+    insert,
+    insertParams,
+    () => {
+      res.status(201).send(newBody);
+    }
+  );
+
+  db.query(
+    query,
+    params,
+    (_, result) => {
+      if (result.length > 0) {
+        return res.status(400).send('Username is duplicate');
+      } else {
+        insertUser();
       }
     }
   );
