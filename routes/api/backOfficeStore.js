@@ -35,8 +35,9 @@ const upload = multer({ storage: storage, limits: { fileSize: fileSize } });
 
 //Add Store
 router.post('/', verifyToken, upload.single('image'), (req, res) => {
+  console.log(req.file?.filename)
   const body = req.body;
-  const fileName = req.file.filename;
+  const fileName = req.file?.filename;
   const token = req.headers['authorization'];
   const user = getUser(token);
   const select = "SELECT id";
@@ -54,7 +55,7 @@ router.post('/', verifyToken, upload.single('image'), (req, res) => {
     !body.name ||
     !body.latitude ||
     !body.longitude) {
-    fs.unlink(req.file.path, (err) => {
+    fs.unlink(req.file?.path, (err) => {
       if (err) {
         console.error('Error deleting file:', err);
       }
@@ -86,7 +87,7 @@ router.post('/', verifyToken, upload.single('image'), (req, res) => {
     params,
     (_, result) => {
       if (result?.length > 0) {
-        fs.unlink(req.file.path, (err) => {
+        fs.unlink(req.file?.path, (err) => {
           if (err) {
             console.error('Error deleting file:', err);
           }
@@ -250,7 +251,7 @@ router.put('/:id', verifyToken, upload.single('image'), (req, res) => {
 //Delete Store
 router.delete('/:id', verifyToken, (req, res) => {
   const id = req.params.id;
-  const select = "SELECT id";
+  const select = "SELECT id, banner";
   const from = "FROM `stores`";
   const where = "WHERE id = ?";
   const query = `${select} ${from} ${where}`;
@@ -278,6 +279,15 @@ router.delete('/:id', verifyToken, (req, res) => {
       if (result.length === 0) {
         return res.status(404).send("Not Found store");
       } else {
+        console.log(result[0])
+        const filePath = path.join(__dirname, '../..', 'uploads', result[0].banner);
+
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error('Error deleting file:', err);
+          }
+        });
+
         deleteStore();
       }
     }

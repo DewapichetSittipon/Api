@@ -18,7 +18,7 @@ const db = mysql.createConnection({
 });
 
 //Login
-router.post('/login', async (req, res) => {
+router.post('/signin', async (req, res) => {
   const body = req.body;
 
   const selectUser = "SELECT * FROM `users`";
@@ -41,6 +41,7 @@ router.post('/login', async (req, res) => {
           return res.json({
             access_token: token,
             expires_token: expiresIn,
+            role: userData.role,
           });
         } else {
           return res.status(400).send();
@@ -53,7 +54,7 @@ router.post('/login', async (req, res) => {
 });
 
 //Register
-router.post('/register', async (req, res) => {
+router.post('/signup', async (req, res) => {
   const body = req.body;
   const select = "SELECT id";
   const from = "FROM `users`";

@@ -157,7 +157,6 @@ router.put('/:id', verifyToken, async (req, res) => {
   if (!body.firstName ||
     !body.lastName ||
     !body.userName ||
-    !body.password ||
     !body.role) {
     return res.status(400).send();
   }
