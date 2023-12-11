@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mysql = require('mysql2');
+const verifyToken = require('../../middleware');
 
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -9,7 +10,7 @@ const db = mysql.createConnection({
 });
 
 //Get Store List
-router.get('/', (req, res) => {
+router.get('/', verifyToken, (req, res) => {
   const page = parseInt(req.query.page);
   const size = parseInt(req.query.size);
   const keyword = (req.query.keyword);
@@ -37,7 +38,7 @@ router.get('/', (req, res) => {
 });
 
 //Get Store Detail
-router.get('/:id', (req, res) => {
+router.get('/:id', verifyToken, (req, res) => {
   const id = req.params.id;
   const select = "SELECT id, name, description, banner, latitude, longitude, views";
   const from = "FROM `stores`";

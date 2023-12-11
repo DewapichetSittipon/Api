@@ -42,6 +42,8 @@ router.post('/signin', async (req, res) => {
             access_token: token,
             expires_token: expiresIn,
             role: userData.role,
+            firstName: userData.firstName,
+            lastName: userData.lastName,
           });
         } else {
           return res.status(400).send();
